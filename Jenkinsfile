@@ -1,27 +1,21 @@
 pipeline {
-    agent { label 'linux'  }
+    agent { label 'windows'  }
     options {
         ansiColor('xterm')
     }
     stages {
         stage('Virtual Environment') {
             steps {
-                sh "virtualenv --no-site-packages my_env"
-
-                sh """#!/usr/bin/env bash
-                source my_env/bin/activate
-                pip install -r requirements.txt
-                """
+                bat "pipenv sync"
+                bat "pipenv clean"
             }
         }
         stage('Unit Tests') {
             steps {
                 sleep 20
-                sh """#!/usr/bin/env bash
-                source my_env/bin/activate
-                python -m pytest --junitxml=build/reports/unittests.xml test
-                """
-                junit 'build/reports/**/*.xml'
+                bat "pipenv run python -m pytest --cov --cov-report xml:build/reports/cov.xml --junitxml=build/reports/tests.xml"
+                junit 'build/reports/tests.xml'
+                cobertura autoUpdateHealth: false, autoUpdateStability: false, coberturaReportFile: 'build/reports/cov.xml', conditionalCoverageTargets: '70, 0, 0', failUnhealthy: false, failUnstable: false, lineCoverageTargets: '80, 0, 0', maxNumberOfBuilds: 0, methodCoverageTargets: '80, 0, 0', onlyStable: false, sourceEncoding: 'ASCII', zoomCoverageChart: false
             }
         }
     }
